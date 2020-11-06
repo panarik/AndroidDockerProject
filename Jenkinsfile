@@ -76,7 +76,7 @@ pipeline {
         stage("Deploying") {
             steps {
                 echo 'Deploy me'
-                echo "with ${SERVER_CREDENTIALS}" //используем переменную environment
+                //echo "with ${SERVER_CREDENTIALS}" //используем переменную environment
             }
         }
 
