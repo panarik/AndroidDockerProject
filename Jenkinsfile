@@ -47,8 +47,10 @@ pipeline {
             }
         }
 
+
+        /*
         //Этот раздел будет выполняться только если на ветке обновится код
-        stage("New CODE on MASTER ranch") {
+        stage("New code on master ranch") {
             when {
                 expression {
                     BRANCH_NAME == 'master' && CODE_CHANGES == true
@@ -58,6 +60,7 @@ pipeline {
                 echo 'Run code on DEV or MASTER branch'
             }
         }
+        */
 
         stage("Testing") {
             when {
