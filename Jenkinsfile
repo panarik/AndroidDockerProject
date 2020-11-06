@@ -2,8 +2,6 @@ node {
 
     checkout scm
 
-    docker.with
-
     stage('Build and upload') {
 
         docker.image('androidsdk/android-24:latest').inside('-u root') //Ссылка на образ: https://hub.docker.com/r/androidsdk/android-30
