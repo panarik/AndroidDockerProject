@@ -1,102 +1,94 @@
-pipeline {
+node {
 
-    agent any
+    checkout scm
 
-    //установить переменные environment
-    environment {
-        NEW_VERSION = '1.0.0'
-        //используем credentials из Jenkins server (с помощью плагина Credentials Building)
-        /*
-        SERVER_CREDENTIALS = credentials('server-credentials')
-        //server-credentials - ID credentials устанавливаем в настройках Jenkins
-        */
-    }
+    docker.with
+
+    stage('Build and upload') {
+
+        docker.image('androidsdk/android-24:latest').inside('-u root') //Ссылка на образ: https://hub.docker.com/r/androidsdk/android-30
+                {
+                    stage('Install environment') {
+
+                        echo 'Устанавливаем Android platform 24'
+                        sh 'sdkmanager "platforms;android-24"'
+
+                        echo 'Устанавливаем Android platform 22'
+                        sh 'sdkmanager "platforms;android-22"'
+
+                        echo 'Устанавливаем SDK source Android-24'
+                        sh 'sdkmanager "sources;android-24"'
+
+                        echo 'Устанавливаем SDK source Android-22'
+                        sh 'sdkmanager "sources;android-22"'
+
+                        echo 'Устанавливаем android-image'
+                        sh 'sdkmanager "system-images;android-22;google_apis;x86_64"'
+                        // вариант 1: sh 'sdkmanager "system-images;android-24;google_apis;arm64-v8a"'
+                        // вариант 2: sh 'sdkmanager "system-images;android-24;google_apis_playstore;x86"'
+                        // вариант 3: sh 'sdkmanager "system-images;android-24;google_apis;x86_64"' // на CI - No compatible devices connected
+                        // вариант 4: sh 'sdkmanager "system-images;android-22;google_apis;x86_64"'
+
+                        echo 'Список установленных пакетов'
+                        sh 'sdkmanager --list'
+                    }
+
+                    stage('Run environment') {
+
+                        echo 'Создаем эмулятор '
+                        sh 'echo no | avdmanager create avd -n Android-22_google_apis_x86_64 -k "system-images;android-22;google_apis;x86_64"'
+                        //вариант 1: sh 'echo no | avdmanager create avd -n Android-24_Google_apis_arm64-v8a -k "system-images;android-24;google_apis;arm64-v8a"'
+                        //вариант 2: sh 'echo no | avdmanager create avd -n Android-24_google_apis_playstore_x86 -k "system-images;android-24;google_apis_playstore;x86"'
+                        //вариант 3: sh 'echo no | avdmanager create avd -n Android-24_google_apis_x86_64 -k "system-images;android-24;google_apis;x86_64"'
+                        //вариант 4: sh 'echo no | avdmanager create avd -n Android-22_google_apis_x86_64 -k "system-images;android-22;google_apis;x86_64"'
+
+                        echo 'Проверяем, если в списке эмулятор'
+                        sh 'emulator -list-avds'
+
+                        //Дебаг - запускаем adb server
+                        sh 'adb -d start-server'
+
+                        echo 'запускаем созданный эмулятор'
+                        sh 'emulator -avd Android-22_google_apis_x86_64 -debug all -no-audio -no-window -gpu swiftshader_indirect -verbose -accel off&' //работает без hardware на локале (Win64)
+                        //вариант 1: sh 'emulator -avd Android-24_Google_apis_arm64-v8a -noaudio -no-window -gpu off -verbose -accel off&'
+                        //вариант 2: sh 'emulator -avd Android-24_google_apis_playstore_x86 -no-window -gpu off -verbose -accel off&' //x86 не запускается без hardware
+                        //вариант 3: sh 'emulator -avd Android-24_google_apis_x86_64 -no-window -verbose -accel off&' //работает без hardware на локале (Win64)
+                        //вариант 4: sh 'emulator -avd Android-22_google_apis_x86_64 -no-window -verbose -accel off&' //работает без hardware на локале (Win64)
+                        //вариант 5: sh 'emulator -avd Android-22_google_apis_x86_64 -debug all -no-audio -no-window -gpu swiftshader_indirect -verbose -accel off&'
+
+                        sh 'sleep 360' //ждем 6 минут пока запустится
+
+                        echo 'NETSTAT: '
+                        sh 'apt -y install net-tools'
+                        sh 'netstat -lnp'
+
+                        echo 'Проверяем, запущен ли эмулятор'
+                        sh 'adb devices'
+                    }
 
 
-/*
-    //дополнтельные инструменты
-    tools {
-        maven 'Maven' //используем наименованиие Maven из GlobalTools Jenkins
-    }
-*/
-
-    //Запуск билд процессов с выбираемыми параметрами
-    parameters {
-        choice(name: 'VERSION', choices: ['DEBUG', 'RC', 'RELEASE'], description: 'choice build type')
-        booleanParam(name: 'executeTests', defaultValue: true, description: 'test my app')
-    }
+                    stage('Build & Install app') {
+                        echo 'Ставим APK'
+                        sh 'chmod +x gradlew && ./gradlew --no-daemon --stacktrace clean :app:assembleDebug :app:assembleAndroidTest'
+                    }
 
 
-    stages {
-        stage("Introduction") {
-            steps {
-                echo 'Hello Jenkins!'
-                echo "Building version ${NEW_VERSION}" //используем Environment
-            }
-        }
+                    stage('Run tests') {
+                        echo 'Запускаем тесты'
+                        sh 'sh gradlew connectedAndroidTest --no-daemon --stacktrace -i'
+                    }
 
-        //Этот раздел будет выполняться только на DEV ИЛИ на MASTER ветке
-        stage("For dev OR master ranch") {
-            when {
-                expression {
-                    BRANCH_NAME == 'dev' || BRANCH_NAME == 'master'
                 }
-            }
-            steps {
-                echo 'Run code on dev OR master branch'
-            }
-        }
 
+        //APK дебажной сборки
+        archiveArtifacts 'app/build/outputs/apk/debug/*.apk'
+        //HTML отчет по результатам тестов
+        archiveArtifacts 'app/build/reports/androidTests/connected/*'
 
-        /*
-        //Этот раздел будет выполняться только если на ветке обновится код
-        stage("New code on master ranch") {
-            when {
-                expression {
-                    BRANCH_NAME == 'master' && CODE_CHANGES == true
-                }
-            }
-            steps {
-                echo 'Run code on DEV or MASTER branch'
-            }
-        }
-        */
-
-        stage("Testing") {
-            when {
-                expression {
-                    params.executeTests
-                }
-            }
-            steps {
-                echo 'Testing...'
-            }
-        }
-
-        stage("Deploying") {
-            steps {
-                echo 'Deploy me'
-                //echo "with ${SERVER_CREDENTIALS}" //используем переменную environment
-            }
-        }
-
+        //APK релизной сборки
+        //archiveArtifacts 'app/build/outputs/apk/production/release/*.apk'
     }
 
-
-/*
-    //действия после выполнения билда
-    post {
-        always {
-            //выполняются всегда
-        }
-        failure {
-            //выполняются при НЕ успешной сборке
-        }
-        success {
-            //выполняются успешной сборке
-        }
-    }
-*/
 
 }
 
