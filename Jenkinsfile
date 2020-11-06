@@ -1,4 +1,6 @@
-node {
+pipeline {
+
+    agent any
 
     checkout scm
 
@@ -89,4 +91,3 @@ node {
 
 
 }
-
