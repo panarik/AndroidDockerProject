@@ -1,4 +1,3 @@
-
 pipeline {
 
     agent any
@@ -6,16 +5,17 @@ pipeline {
     stages {
 
         stage("Introduction") {
-
-            steps{
+            steps {
                 echo 'Hello Jenkins!'
             }
-
-            steps{
-                echo 'I can do anything!'
-            }
-
         }
+
+        stage("Introduction 2") {
+            steps {
+                echo 'Hello Jenkins!'
+            }
+        }
+
     }
 }
 
