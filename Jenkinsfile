@@ -6,8 +6,10 @@ pipeline {
     environment {
         NEW_VERSION = '1.0.0'
         //используем credentials из Jenkins server (с помощью плагина Credentials Building)
+        /*
         SERVER_CREDENTIALS = credentials('server-credentials')
         //server-credentials - ID credentials устанавливаем в настройках Jenkins
+        */
     }
 
 
