@@ -42,7 +42,14 @@ node {
 
             echo 'Проверяем, запущен ли эмулятор'
             sh 'adb devices'
+        }
 
+        stage('Build & Install app') {
+            sh 'chmod +x gradlew && ./gradlew --no-daemon --stacktrace clean :app:assembleDebug :app:assembleAndroidTest'
+        }
+
+        stage('Run tests') {
+            sh 'sh gradlew connectedAndroidTest --no-daemon --stacktrace -i'
         }
 
 
