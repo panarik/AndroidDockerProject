@@ -16,15 +16,15 @@ node {
             echo 'Устанавливаем android-image'
             sh 'sdkmanager "system-images;android-22;google_apis;x86_64"'
 
-            //test1
             echo 'Список установленных пакетов'
             sh 'sdkmanager --list'
-
-            //Дебаг
-            sh 'sleep 36000' //ждем 600 минут
         }
 
         stage('Run environment') {
+
+            //Дебаг
+            sh 'sleep 36000' //ждем 600 минут
+
             echo 'Создаем эмулятор'
             sh 'echo no | avdmanager create avd -n Android-22_google_apis_x86_64 -k "system-images;android-22;google_apis;x86_64"'
 
