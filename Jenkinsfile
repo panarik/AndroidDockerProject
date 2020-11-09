@@ -1,8 +1,18 @@
 node {
-    /* Requires the Docker Pipeline plugin to be installed */
-    docker.image('node:14-alpine').inside {
-        stage('Test node') {
-            sh 'node --version'
+
+
+    docker.image('androidsdk/android-24:latest').inside('-u root') {
+        stage('Install environment') {
+
+            echo 'Устанавливаем Android platform 24'
+            sh 'sdkmanager "platforms;android-24"'
+
+            echo 'Список установленных пакетов'
+            sh 'sdkmanager --list'
+
+
+
+
         }
     }
 }
