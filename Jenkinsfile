@@ -16,6 +16,7 @@ node {
             echo 'Устанавливаем android-image'
             sh 'sdkmanager "system-images;android-22;google_apis;x86_64"'
 
+            //test
             echo 'Список установленных пакетов'
             sh 'sdkmanager --list'
         }
