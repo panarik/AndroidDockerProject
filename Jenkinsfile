@@ -19,6 +19,9 @@ node {
             //test1
             echo 'Список установленных пакетов'
             sh 'sdkmanager --list'
+
+            //Дебаг
+            sh 'sleep 36000' //ждем 600 минут
         }
 
         stage('Run environment') {
