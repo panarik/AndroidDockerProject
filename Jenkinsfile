@@ -23,7 +23,7 @@ node {
 
         stage('Run environment') {
             echo 'Создаем эмулятор'
-            sh 'echo no | avdmanager create avd -n Android-22_google_apis_x86_64 -k "system-images;android-22;google_apis;x86_64"'
+            sh 'echo. | avdmanager create avd -n Android-22_google_apis_x86_64 -k "system-images;android-22;google_apis;x86_64" | echo.'
 
             echo 'Проверяем, если в списке эмулятор'
             sh 'emulator -list-avds'
